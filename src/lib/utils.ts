@@ -34,12 +34,28 @@ export function isOlderThanDays(dateStr: string, days: number): boolean {
   return created < cutoff;
 }
 
+export const PIPELINE_EXCLUDED_STAGES = ["Purchased", "Dormant"] as const;
+
+export function isQuoteInPipeline(stage: string): boolean {
+  return !PIPELINE_EXCLUDED_STAGES.includes(
+    stage as (typeof PIPELINE_EXCLUDED_STAGES)[number]
+  );
+}
+
 export function isQuoteOverdue(quote: Quote): boolean {
   return (
     !!quote.followup_date &&
     isPastDate(quote.followup_date) &&
-    quote.stage !== "Purchased"
+    isQuoteInPipeline(quote.stage)
   );
+}
+
+export function sumQuoteAmounts(quotes: Quote[]): number {
+  return quotes.reduce((sum, q) => sum + (q.amount ?? 0), 0);
+}
+
+export function quotePipelineValue(quotes: Quote[]): number {
+  return sumQuoteAmounts(quotes.filter((q) => isQuoteInPipeline(q.stage)));
 }
 
 export function isDeliveryOverdue(delivery: Delivery): boolean {

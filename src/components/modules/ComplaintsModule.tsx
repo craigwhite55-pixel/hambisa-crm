@@ -12,7 +12,9 @@ import {
   isOlderThanDays,
   sortByDate,
 } from "@/lib/utils";
+import { COMPLAINT_EXPORT_COLUMNS } from "@/lib/export";
 import { AlertBar } from "../AlertBar";
+import { ExportMenu } from "../ExportMenu";
 import { KanbanBoard } from "../KanbanBoard";
 import { Modal } from "../Modal";
 import { PeriodFilter as PeriodFilterBar } from "../PeriodFilter";
@@ -153,6 +155,11 @@ export function ComplaintsModule() {
           <option value="oldest">Oldest first</option>
           <option value="newest">Newest first</option>
         </select>
+        <ExportMenu
+          rows={filtered as unknown as Record<string, unknown>[]}
+          columns={COMPLAINT_EXPORT_COLUMNS}
+          filename={`hambisa-complaints-${period}`}
+        />
         <button onClick={openCreate} className="btn-primary">+ Log Issue</button>
       </div>
 
@@ -170,6 +177,9 @@ export function ComplaintsModule() {
           onStageChange={handleStageChange}
           onCardClick={openEdit}
           isOverdue={isComplaintOverdue}
+          getColumnFooter={(_column, columnItems) =>
+            `${columnItems.length} ${columnItems.length === 1 ? "issue" : "issues"}`
+          }
           renderCardContent={(c) => (
             <>
               <div className="mb-1 text-[13px] font-bold">

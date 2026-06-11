@@ -16,6 +16,7 @@ type SidebarProps = {
 };
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard", icon: "📊", key: null, alertKey: null },
   { href: "/quotes", label: "Quotes", icon: "📋", key: "quotes" as const, alertKey: null },
   { href: "/deliveries", label: "Deliveries", icon: "🚚", key: "deliveries" as const, alertKey: "deliveryAlert" as const },
   { href: "/complaints", label: "Complaints", icon: "⚠️", key: "complaints" as const, alertKey: "complaintAlert" as const },
@@ -45,17 +46,19 @@ export function Sidebar({ counts }: SidebarProps) {
               >
                 <span className="text-base">{item.icon}</span>
                 <span className="flex-1">{item.label}</span>
-                <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                    hasAlert
-                      ? "bg-danger text-white"
-                      : active
-                        ? "bg-accent text-black"
-                        : "bg-surface3 text-muted"
-                  }`}
-                >
-                  {counts[item.key]}
-                </span>
+                {item.key && (
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                      hasAlert
+                        ? "bg-danger text-white"
+                        : active
+                          ? "bg-accent text-black"
+                          : "bg-surface3 text-muted"
+                    }`}
+                  >
+                    {counts[item.key]}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -79,7 +82,10 @@ export function Sidebar({ counts }: SidebarProps) {
         {[...NAV, ...(showSettings ? [{ href: "/settings", label: "Settings", icon: "⚙️", key: "settings" as const, alertKey: null }] : [])].map((item) => {
           const active = pathname.startsWith(item.href);
           const hasAlert = item.alertKey ? counts[item.alertKey as keyof typeof counts] === true : false;
-          const count = "key" in item && item.key !== "settings" ? counts[item.key as "quotes" | "deliveries" | "complaints"] : null;
+          const count =
+            item.key && item.key !== "settings"
+              ? counts[item.key as "quotes" | "deliveries" | "complaints"]
+              : null;
           return (
             <Link
               key={item.href}

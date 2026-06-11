@@ -1,29 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendEmail } from "@/lib/email";
 import { getSupabaseUrl } from "@/lib/supabase/env";
 import { isDeliveryOverdue, isQuoteOverdue, isOlderThanDays } from "@/lib/utils";
 import type { Complaint, Delivery, Quote } from "@/lib/types";
-
-async function sendEmail(to: string[], subject: string, html: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.ALERT_FROM_EMAIL ?? "alerts@hambisa.africa";
-  if (!apiKey) return { sent: false, reason: "RESEND_API_KEY not configured" };
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ from, to, subject, html }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    return { sent: false, reason: text };
-  }
-  return { sent: true };
-}
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");

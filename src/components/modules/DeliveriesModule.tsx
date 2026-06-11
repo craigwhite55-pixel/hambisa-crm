@@ -20,7 +20,9 @@ import {
   isDeliveryOverdue,
   sortByDate,
 } from "@/lib/utils";
+import { DELIVERY_EXPORT_COLUMNS } from "@/lib/export";
 import { AlertBar } from "../AlertBar";
+import { ExportMenu } from "../ExportMenu";
 import { KanbanBoard } from "../KanbanBoard";
 import { Modal } from "../Modal";
 import { PeriodFilter as PeriodFilterBar } from "../PeriodFilter";
@@ -168,6 +170,11 @@ export function DeliveriesModule() {
           <option value="oldest">Oldest first</option>
           <option value="newest">Newest first</option>
         </select>
+        <ExportMenu
+          rows={sorted as unknown as Record<string, unknown>[]}
+          columns={DELIVERY_EXPORT_COLUMNS}
+          filename={`hambisa-deliveries-${period}`}
+        />
         <button onClick={openCreate} className="btn-primary">+ New Delivery</button>
       </div>
 
@@ -198,6 +205,9 @@ export function DeliveriesModule() {
           onStageChange={handleStageChange}
           onCardClick={openEdit}
           isOverdue={isDeliveryOverdue}
+          getColumnFooter={(_column, columnItems) =>
+            `${columnItems.length} ${columnItems.length === 1 ? "delivery" : "deliveries"}`
+          }
           renderCardContent={(d) => (
             <>
               <div className="mb-1 text-[13px] font-bold">

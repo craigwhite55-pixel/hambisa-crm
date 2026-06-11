@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/session";
+import { sendWelcomeEmail } from "@/lib/email";
+import { ROLE_LABELS } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/roles";
@@ -24,11 +26,12 @@ export async function POST(request: Request) {
   try {
     const session = await requireRole(["super_admin"]);
     const body = await request.json();
-    const { email, password, full_name, role } = body as {
+    const { email, password, full_name, role, send_welcome_email } = body as {
       email: string;
       password: string;
       full_name?: string;
       role: UserRole;
+      send_welcome_email?: boolean;
     };
 
     if (!email || !password || !role) {
@@ -55,7 +58,22 @@ export async function POST(request: Request) {
 
     if (profileError) throw profileError;
 
-    return NextResponse.json({ ok: true, id: created.user.id });
+    let emailResult: { sent: boolean; reason?: string } | undefined;
+    if (send_welcome_email !== false) {
+      emailResult = await sendWelcomeEmail({
+        email,
+        fullName: full_name,
+        role: ROLE_LABELS[role],
+        password,
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      id: created.user.id,
+      email_sent: emailResult?.sent ?? false,
+      email_error: emailResult?.sent ? undefined : emailResult?.reason,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error";
     const status = msg === "Forbidden" ? 403 : msg === "Unauthorized" ? 401 : 400;

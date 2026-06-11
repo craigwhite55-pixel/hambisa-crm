@@ -6,14 +6,19 @@ import { CATEGORIES, QUOTE_FEEDBACK, QUOTE_STAGES } from "@/lib/constants";
 import type { PeriodFilter, Quote, SortOrder } from "@/lib/types";
 import { useProfile } from "@/components/ProfileContext";
 import { canDeleteRecords } from "@/lib/roles";
+import { QUOTE_EXPORT_COLUMNS } from "@/lib/export";
 import {
   filterByPeriod,
   formatCurrency,
   formatDate,
+  isQuoteInPipeline,
   isQuoteOverdue,
+  quotePipelineValue,
   sortByDate,
+  sumQuoteAmounts,
 } from "@/lib/utils";
 import { AlertBar } from "../AlertBar";
+import { ExportMenu } from "../ExportMenu";
 import { KanbanBoard } from "../KanbanBoard";
 import { Modal } from "../Modal";
 import { PeriodFilter as PeriodFilterBar } from "../PeriodFilter";
@@ -79,10 +84,13 @@ export function QuotesModule() {
 
   const allOverdue = useMemo(() => quotes.filter(isQuoteOverdue), [quotes]);
 
+  const exportRows = useMemo(
+    () => filtered as unknown as Record<string, unknown>[],
+    [filtered]
+  );
+
   const stats = useMemo(() => {
-    const pipeline = periodData
-      .filter((q) => q.stage !== "Purchased")
-      .reduce((sum, q) => sum + (q.amount ?? 0), 0);
+    const pipeline = quotePipelineValue(periodData);
     return [
       { label: "Total Quotes", value: periodData.length },
       { label: "Pipeline Value", value: formatCurrency(pipeline), tone: "warning" as const },
@@ -168,6 +176,11 @@ export function QuotesModule() {
           <option value="oldest">Oldest first</option>
           <option value="newest">Newest first</option>
         </select>
+        <ExportMenu
+          rows={exportRows}
+          columns={QUOTE_EXPORT_COLUMNS}
+          filename={`hambisa-quotes-${period}`}
+        />
         <button onClick={openCreate} className="btn-primary">+ New Quote</button>
       </div>
 
@@ -210,6 +223,21 @@ export function QuotesModule() {
           onStageChange={handleStageChange}
           onCardClick={openEdit}
           isOverdue={isQuoteOverdue}
+          getColumnFooter={(column, columnItems) => {
+            const quotes = columnItems as Quote[];
+            const total = sumQuoteAmounts(quotes);
+            const inPipeline = isQuoteInPipeline(column);
+            return (
+              <span>
+                {quotes.length} {quotes.length === 1 ? "quote" : "quotes"}
+                {total > 0 && (
+                  <span className={inPipeline ? " text-accent" : " text-muted"}>
+                    {" "}· {formatCurrency(total)}
+                  </span>
+                )}
+              </span>
+            );
+          }}
           renderCardContent={(q) => (
             <>
               <div className="mb-1 text-[13px] font-bold">

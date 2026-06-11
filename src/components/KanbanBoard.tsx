@@ -27,6 +27,7 @@ type KanbanBoardProps<T extends KanbanItem> = {
   renderCardContent: (item: T) => React.ReactNode;
   onCardClick: (item: T) => void;
   isOverdue: (item: T) => boolean;
+  getColumnFooter?: (column: string, columnItems: T[]) => React.ReactNode;
 };
 
 export function KanbanBoard<T extends KanbanItem>({
@@ -36,6 +37,7 @@ export function KanbanBoard<T extends KanbanItem>({
   renderCardContent,
   onCardClick,
   isOverdue,
+  getColumnFooter,
 }: KanbanBoardProps<T>) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -73,7 +75,13 @@ export function KanbanBoard<T extends KanbanItem>({
         {columns.map((column) => {
           const columnItems = items.filter((i) => i.stage === column);
           return (
-            <KanbanColumn key={column} id={column} title={column} count={columnItems.length}>
+            <KanbanColumn
+              key={column}
+              id={column}
+              title={column}
+              count={columnItems.length}
+              footer={getColumnFooter?.(column, columnItems)}
+            >
               {columnItems.map((item) => (
                 <KanbanCard
                   key={item.id}

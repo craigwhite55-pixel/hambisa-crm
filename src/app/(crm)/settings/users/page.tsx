@@ -16,8 +16,10 @@ export default function UsersSettingsPage() {
     password: "",
     full_name: "",
     role: "staff" as UserRole,
+    send_welcome_email: true,
   });
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function load() {
@@ -32,8 +34,9 @@ export default function UsersSettingsPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ email: "", password: "", full_name: "", role: "staff" });
+    setForm({ email: "", password: "", full_name: "", role: "staff", send_welcome_email: true });
     setError("");
+    setMessage("");
     setModalOpen(true);
   }
 
@@ -44,6 +47,7 @@ export default function UsersSettingsPage() {
       password: "",
       full_name: user.full_name ?? "",
       role: user.role,
+      send_welcome_email: false,
     });
     setError("");
     setModalOpen(true);
@@ -70,12 +74,23 @@ export default function UsersSettingsPage() {
         });
 
     setSaving(false);
+    const data = await res.json();
     if (!res.ok) {
-      const data = await res.json();
       setError(data.error ?? "Failed to save");
       return;
     }
     setModalOpen(false);
+    if (!editing) {
+      if (data.email_sent) {
+        setMessage(`User created. Welcome email sent to ${form.email}.`);
+      } else if (form.send_welcome_email) {
+        setMessage(
+          `User created. Email not sent${data.email_error ? `: ${data.email_error}` : " — configure RESEND_API_KEY in Vercel"}.`
+        );
+      } else {
+        setMessage("User created.");
+      }
+    }
     load();
     refresh();
   }
@@ -94,6 +109,12 @@ export default function UsersSettingsPage() {
 
   return (
     <div>
+      {message && (
+        <p className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-accent">
+          {message}
+        </p>
+      )}
+
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="font-heading text-lg font-bold">Users &amp; roles</h2>
@@ -179,6 +200,17 @@ export default function UsersSettingsPage() {
               <label className="label">New password (optional)</label>
               <input type="password" className="input-field w-full" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </div>
+          )}
+          {!editing && (
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input
+                type="checkbox"
+                checked={form.send_welcome_email}
+                onChange={(e) => setForm({ ...form, send_welcome_email: e.target.checked })}
+                className="accent-accent"
+              />
+              Email login details to the new user
+            </label>
           )}
         </div>
       </Modal>
