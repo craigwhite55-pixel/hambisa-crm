@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Complaint, Delivery, Quote } from "@/lib/types";
 import { isDeliveryOverdue, isQuoteOverdue } from "@/lib/utils";
 import { Header } from "./Header";
+import { ProfileProvider } from "./ProfileContext";
 import { Sidebar } from "./Sidebar";
 
 type CrmShellProps = {
@@ -63,12 +64,14 @@ export function CrmShell({ children, userEmail }: CrmShellProps) {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <Header userEmail={userEmail} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar counts={counts} />
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
+    <ProfileProvider>
+      <div className="flex h-screen flex-col overflow-hidden bg-background">
+        <Header userEmail={userEmail} />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar counts={counts} />
+          <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
+        </div>
       </div>
-    </div>
+    </ProfileProvider>
   );
 }

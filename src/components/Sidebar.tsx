@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useProfile } from "./ProfileContext";
+import { canAccessSettings } from "@/lib/roles";
 
 type SidebarProps = {
   counts: {
@@ -21,6 +23,8 @@ const NAV = [
 
 export function Sidebar({ counts }: SidebarProps) {
   const pathname = usePathname();
+  const { role } = useProfile();
+  const showSettings = canAccessSettings(role);
 
   return (
     <>
@@ -55,13 +59,27 @@ export function Sidebar({ counts }: SidebarProps) {
               </Link>
             );
           })}
+          {showSettings && (
+            <Link
+              href="/settings"
+              className={`mt-2 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all ${
+                pathname.startsWith("/settings")
+                  ? "bg-surface2 text-foreground"
+                  : "text-muted hover:bg-surface2 hover:text-foreground"
+              }`}
+            >
+              <span className="text-base">⚙️</span>
+              <span>Settings</span>
+            </Link>
+          )}
         </nav>
       </aside>
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-border bg-surface md:hidden">
-        {NAV.map((item) => {
+        {[...NAV, ...(showSettings ? [{ href: "/settings", label: "Settings", icon: "⚙️", key: "settings" as const, alertKey: null }] : [])].map((item) => {
           const active = pathname.startsWith(item.href);
-          const hasAlert = item.alertKey ? counts[item.alertKey] : false;
+          const hasAlert = item.alertKey ? counts[item.alertKey as keyof typeof counts] === true : false;
+          const count = "key" in item && item.key !== "settings" ? counts[item.key as "quotes" | "deliveries" | "complaints"] : null;
           return (
             <Link
               key={item.href}
@@ -72,13 +90,15 @@ export function Sidebar({ counts }: SidebarProps) {
             >
               <span>{item.icon}</span>
               <span className="font-medium">{item.label}</span>
-              <span
-                className={`rounded-full px-1.5 text-[10px] font-bold ${
-                  hasAlert ? "bg-danger text-white" : "bg-surface3 text-muted"
-                }`}
-              >
-                {counts[item.key]}
-              </span>
+              {count !== null && (
+                <span
+                  className={`rounded-full px-1.5 text-[10px] font-bold ${
+                    hasAlert ? "bg-danger text-white" : "bg-surface3 text-muted"
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
             </Link>
           );
         })}

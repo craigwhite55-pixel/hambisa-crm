@@ -119,6 +119,7 @@ export function sortByDate<T extends { created_at: string }>(
   });
 }
 
+/** @deprecated Use canDeleteRecords(role) from @/lib/roles */
 export function canDelete(userEmail: string | undefined): boolean {
   const ownerEmail = process.env.NEXT_PUBLIC_OWNER_EMAIL?.toLowerCase();
   if (!ownerEmail) return true;

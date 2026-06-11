@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CATEGORIES, QUOTE_FEEDBACK, QUOTE_STAGES } from "@/lib/constants";
 import type { PeriodFilter, Quote, SortOrder } from "@/lib/types";
+import { useProfile } from "@/components/ProfileContext";
+import { canDeleteRecords } from "@/lib/roles";
 import {
-  canDelete,
   filterByPeriod,
   formatCurrency,
   formatDate,
@@ -34,7 +35,8 @@ const EMPTY: Omit<Quote, "id" | "created_at" | "created_by"> = {
   comments: "",
 };
 
-export function QuotesModule({ userEmail }: { userEmail?: string }) {
+export function QuotesModule() {
+  const { role } = useProfile();
   const supabase = createClient();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export function QuotesModule({ userEmail }: { userEmail?: string }) {
   }
 
   async function handleDelete() {
-    if (!editing || !canDelete(userEmail)) return;
+    if (!editing || !canDeleteRecords(role)) return;
     await supabase.from("quotes").delete().eq("id", editing.id);
     setModalOpen(false);
     load();
@@ -264,7 +266,7 @@ export function QuotesModule({ userEmail }: { userEmail?: string }) {
         wide
         footer={
           <>
-            {editing && canDelete(userEmail) && (
+            {editing && canDeleteRecords(role) && (
               <button onClick={handleDelete} className="btn-danger btn-sm">🗑 Delete</button>
             )}
             <div className="flex-1" />

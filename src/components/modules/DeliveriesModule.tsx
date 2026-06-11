@@ -10,8 +10,9 @@ import {
   type DeliveryViewFilter,
 } from "@/lib/constants";
 import type { Delivery, PeriodFilter, SortOrder } from "@/lib/types";
+import { useProfile } from "@/components/ProfileContext";
+import { canDeleteRecords } from "@/lib/roles";
 import {
-  canDelete,
   deliveryDateLabel,
   filterByPeriod,
   formatDate,
@@ -39,7 +40,8 @@ const EMPTY: Omit<Delivery, "id" | "created_at" | "created_by"> = {
   notes: "",
 };
 
-export function DeliveriesModule({ userEmail }: { userEmail?: string }) {
+export function DeliveriesModule() {
+  const { role } = useProfile();
   const supabase = createClient();
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export function DeliveriesModule({ userEmail }: { userEmail?: string }) {
   }
 
   async function handleDelete() {
-    if (!editing || !canDelete(userEmail)) return;
+    if (!editing || !canDeleteRecords(role)) return;
     await supabase.from("deliveries").delete().eq("id", editing.id);
     setModalOpen(false);
     load();
@@ -248,7 +250,7 @@ export function DeliveriesModule({ userEmail }: { userEmail?: string }) {
         wide
         footer={
           <>
-            {editing && canDelete(userEmail) && <button onClick={handleDelete} className="btn-danger">🗑 Delete</button>}
+            {editing && canDeleteRecords(role) && <button onClick={handleDelete} className="btn-danger">🗑 Delete</button>}
             <div className="flex-1" />
             <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancel</button>
             <button onClick={handleSave} disabled={saving || !form.name || !form.category} className="btn-primary">

@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CATEGORIES, COMPLAINT_STAGES, COMPLAINT_TYPES } from "@/lib/constants";
 import type { Complaint, PeriodFilter, SortOrder } from "@/lib/types";
+import { useProfile } from "@/components/ProfileContext";
+import { canDeleteRecords } from "@/lib/roles";
 import {
-  canDelete,
   filterByPeriod,
   formatDate,
   isOlderThanDays,
@@ -35,7 +36,8 @@ function isComplaintOverdue(c: Complaint): boolean {
   return c.stage !== "Resolved" && isOlderThanDays(c.created_at, 3);
 }
 
-export function ComplaintsModule({ userEmail }: { userEmail?: string }) {
+export function ComplaintsModule() {
+  const { role } = useProfile();
   const supabase = createClient();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,7 +134,7 @@ export function ComplaintsModule({ userEmail }: { userEmail?: string }) {
   }
 
   async function handleDelete() {
-    if (!editing || !canDelete(userEmail)) return;
+    if (!editing || !canDeleteRecords(role)) return;
     await supabase.from("complaints").delete().eq("id", editing.id);
     setModalOpen(false);
     load();
@@ -224,7 +226,7 @@ export function ComplaintsModule({ userEmail }: { userEmail?: string }) {
         wide
         footer={
           <>
-            {editing && canDelete(userEmail) && <button onClick={handleDelete} className="btn-danger">🗑 Delete</button>}
+            {editing && canDeleteRecords(role) && <button onClick={handleDelete} className="btn-danger">🗑 Delete</button>}
             <div className="flex-1" />
             <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancel</button>
             <button onClick={handleSave} disabled={saving || !form.name || !form.description} className="btn-primary">
