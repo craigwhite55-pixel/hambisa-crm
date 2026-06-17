@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { LoginAppToggle } from "@/components/auth/LoginAppToggle";
 
 type Mode = "login" | "forgot" | "reset";
 
@@ -115,6 +116,8 @@ export default function LoginPage() {
           </h1>
           <p className="mt-1 text-sm text-muted">Africa · Rural Retail &amp; Operations</p>
         </div>
+
+        <LoginAppToggle active="crm" />
 
         {mode === "login" && (
           <form onSubmit={handleLogin} className="flex flex-col gap-3">

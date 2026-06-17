@@ -29,3 +29,7 @@ export function canManageUsers(role: UserRole | undefined): boolean {
 export function canAccessReports(role: UserRole | undefined): boolean {
   return role === "admin" || role === "super_admin";
 }
+
+export function canAccessRetail(role: UserRole | undefined): boolean {
+  return role === "admin" || role === "super_admin";
+}

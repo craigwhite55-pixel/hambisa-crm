@@ -31,17 +31,26 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname === "/login";
-  const isPublic = isLoginPage;
+  const isRetailLogin = request.nextUrl.pathname === "/retail/login";
+  const isPublic = isLoginPage || isRetailLogin;
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = request.nextUrl.pathname.startsWith("/retail")
+      ? "/retail/login"
+      : "/login";
     return NextResponse.redirect(url);
   }
 
   if (user && isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/quotes";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && isRetailLogin) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/retail";
     return NextResponse.redirect(url);
   }
 
