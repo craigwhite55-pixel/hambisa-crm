@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FileDropZone } from "@/components/retail/FileDropZone";
 import { retailFmt } from "@/lib/retail/format";
-import { formatFileSize, readUploadAsText } from "@/lib/retail/readUpload";
+import { readUploadAsText } from "@/lib/retail/readUpload";
 
 type HealthData = {
   dbReady?: boolean;
@@ -54,7 +55,7 @@ export default function RetailImportPage() {
     if (!stockFile || !dbReady) return;
     setImporting("stock");
     setError("");
-    setMessage("");
+    setMessage("Reading file and uploading — large stock files can take up to a minute…");
     try {
       const csv = await readUploadAsText(stockFile);
       const res = await fetch("/api/retail/import/stock", {
@@ -74,6 +75,7 @@ export default function RetailImportPage() {
       loadHealth();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
+      setMessage("");
     } finally {
       setImporting(null);
     }
@@ -83,7 +85,7 @@ export default function RetailImportPage() {
     if (!salesFile || !dbReady) return;
     setImporting("sales");
     setError("");
-    setMessage("");
+    setMessage("Reading file and uploading…");
     try {
       const csv = await readUploadAsText(salesFile);
       const res = await fetch("/api/retail/import/sales", {
@@ -103,6 +105,7 @@ export default function RetailImportPage() {
       loadHealth();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
+      setMessage("");
     } finally {
       setImporting(null);
     }
@@ -174,7 +177,7 @@ export default function RetailImportPage() {
         <section className="retail-card p-5">
           <h2 className="font-heading mb-1 text-lg font-semibold">1. Stock snapshot</h2>
           <p className="mb-4 text-sm text-muted">
-            Upload POS stock valuation export. Used to join costs and selling prices to sales lines.
+            e.g. <strong>stock list 16th june.csv</strong> from POS
           </p>
           <label className="label">Snapshot date</label>
           <input
@@ -184,53 +187,45 @@ export default function RetailImportPage() {
             onChange={(e) => setSnapshotDate(e.target.value)}
           />
           <label className="label">Stock file</label>
-          <input
-            type="file"
-            accept=".csv,.txt,.xlsx,.xls"
-            className="mb-2 block w-full text-sm text-muted"
-            onChange={(e) => setStockFile(e.target.files?.[0] ?? null)}
+          <FileDropZone
+            id="stock-file"
+            file={stockFile}
+            onFile={(f) => {
+              setStockFile(f);
+              setError("");
+            }}
+            hint="CSV or Excel · stock valuation / SOH export"
           />
-          {stockFile ? (
-            <p className="mb-3 text-xs text-accent">
-              Selected: {stockFile.name} ({formatFileSize(stockFile.size)})
-            </p>
-          ) : (
-            <p className="mb-3 text-xs text-muted">Choose a file, then click Import stock</p>
-          )}
           <button
-            className="btn-primary"
+            className="btn-primary mt-2"
             disabled={!stockFile || importing !== null || !dbReady}
             onClick={importStock}
           >
-            {importing === "stock" ? "Importing…" : "Import stock"}
+            {importing === "stock" ? "Importing…" : stockFile ? "Import stock" : "Select a file first"}
           </button>
         </section>
 
         <section className="retail-card p-5">
           <h2 className="font-heading mb-1 text-lg font-semibold">2. Sales period</h2>
           <p className="mb-4 text-sm text-muted">
-            Upload sales export (legacy or units-by-month). Auto-detects format and joins to latest stock.
+            e.g. <strong>monthly sales analysis 17 June.csv</strong> from POS
           </p>
           <label className="label">Sales file</label>
-          <input
-            type="file"
-            accept=".csv,.txt,.xlsx,.xls"
-            className="mb-2 block w-full text-sm text-muted"
-            onChange={(e) => setSalesFile(e.target.files?.[0] ?? null)}
+          <FileDropZone
+            id="sales-file"
+            file={salesFile}
+            onFile={(f) => {
+              setSalesFile(f);
+              setError("");
+            }}
+            hint="CSV or Excel · monthly sales analysis"
           />
-          {salesFile ? (
-            <p className="mb-3 text-xs text-accent">
-              Selected: {salesFile.name} ({formatFileSize(salesFile.size)})
-            </p>
-          ) : (
-            <p className="mb-3 text-xs text-muted">Choose a file, then click Import sales</p>
-          )}
           <button
-            className="btn-primary"
+            className="btn-primary mt-2"
             disabled={!salesFile || importing !== null || !dbReady}
             onClick={importSales}
           >
-            {importing === "sales" ? "Importing…" : "Import sales"}
+            {importing === "sales" ? "Importing…" : salesFile ? "Import sales" : "Select a file first"}
           </button>
         </section>
       </div>
@@ -238,8 +233,8 @@ export default function RetailImportPage() {
       <section className="retail-card p-5">
         <h2 className="font-heading mb-2 text-lg font-semibold">Import order</h2>
         <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
-          <li>Import <strong>stock</strong> first (e.g. stock list CSV from POS).</li>
-          <li>Then import <strong>sales</strong> for the same period (e.g. monthly sales analysis).</li>
+          <li>Import <strong>stock</strong> first — wait for the green success message.</li>
+          <li>Then import <strong>sales</strong> for the same period.</li>
           <li>Check match rate on this page, then review Departments and Shisanyama.</li>
         </ol>
       </section>
