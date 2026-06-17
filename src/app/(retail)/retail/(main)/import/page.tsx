@@ -118,31 +118,44 @@ export default function RetailImportPage() {
       {health && !dbReady && (
         <div className="rounded-lg border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-4 py-3 text-sm text-danger">
           <strong>Database not set up yet.</strong> The retail tables need to be created in Supabase before imports work.
-          Ask your admin to run <code className="text-xs">004_retail_phase1.sql</code> in the Supabase SQL Editor.
         </div>
       )}
 
-      {health?.period && (
+      {dbReady && (health?.period || health?.stockSnapshot) && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <StatCard
-            label="Latest sales period"
-            value={health.period.label}
-            sub={`${health.period.row_count} items · ${health.period.format}`}
-          />
-          <StatCard
-            label="Stock match rate"
-            value={retailFmt.pct(health.matchRate ?? 0)}
-            sub={`${health.period.unmatched_count} unmatched codes`}
-          />
-          <StatCard
-            label="Latest stock snapshot"
-            value={health.stockSnapshot?.label ?? "None"}
-            sub={
-              health.stockSnapshot
-                ? `${health.stockSnapshot.row_count} items · ${health.stockSnapshot.snapshot_date}`
-                : "Import stock before sales for best match rate"
-            }
-          />
+          {health?.period ? (
+            <>
+              <StatCard
+                label="Latest sales period"
+                value={health.period.label}
+                sub={`${health.period.row_count} items · ${health.period.format}`}
+              />
+              <StatCard
+                label="Stock match rate"
+                value={retailFmt.pct(health.matchRate ?? 0)}
+                sub={`${health.period.unmatched_count} unmatched codes`}
+              />
+              <StatCard
+                label="Latest stock snapshot"
+                value={health.stockSnapshot?.label ?? "None"}
+                sub={
+                  health.stockSnapshot
+                    ? `${health.stockSnapshot.row_count} items · ${health.stockSnapshot.snapshot_date}`
+                    : "Import stock before sales for best match rate"
+                }
+              />
+            </>
+          ) : (
+            <StatCard
+              label="Latest stock snapshot"
+              value={health?.stockSnapshot?.label ?? "None"}
+              sub={
+                health?.stockSnapshot
+                  ? `${health.stockSnapshot.row_count} items imported · now import sales`
+                  : "No data yet"
+              }
+            />
+          )}
         </div>
       )}
 

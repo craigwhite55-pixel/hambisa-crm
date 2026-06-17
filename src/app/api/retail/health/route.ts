@@ -56,12 +56,19 @@ export async function GET(request: Request) {
     const { data: periods, error: periodErr } = await periodQuery;
     if (periodErr) throw periodErr;
 
+    const stockRes = await supabase
+      .from("retail_stock_snapshots")
+      .select("*")
+      .order("imported_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const period = periods?.[0];
     if (!period) {
       return NextResponse.json({
         dbReady: true,
         period: null,
-        stockSnapshot: null,
+        stockSnapshot: stockRes.data,
         rollup: [],
         unmatchedCodes: [],
         unmappedDepts: [],
@@ -69,14 +76,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const [salesOnlyDepts, stockRes, itemsRes] = await Promise.all([
+    const [salesOnlyDepts, itemsRes] = await Promise.all([
       loadSalesOnlyDepts(supabase),
-      supabase
-        .from("retail_stock_snapshots")
-        .select("*")
-        .order("imported_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
       supabase
         .from("retail_sales_items")
         .select(
