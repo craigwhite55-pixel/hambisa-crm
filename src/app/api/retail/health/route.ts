@@ -5,6 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { loadSalesOnlyDepts } from "@/lib/retail/db";
 import { rollupByMajorDept } from "@/lib/retail/rollup";
 
+async function checkRetailDb(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { error } = await supabase.from("retail_stock_snapshots").select("id").limit(1);
+  if (!error) return { dbReady: true as const };
+  const msg = error.message ?? "Database error";
+  if (msg.includes("relation") || msg.includes("schema cache")) {
+    return { dbReady: false as const, error: msg };
+  }
+  return { dbReady: true as const };
+}
+
 export async function GET(request: Request) {
   try {
     const session = await getSessionProfile();
@@ -13,6 +23,20 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createClient();
+    const db = await checkRetailDb(supabase);
+    if (!db.dbReady) {
+      return NextResponse.json({
+        dbReady: false,
+        error: db.error,
+        period: null,
+        stockSnapshot: null,
+        rollup: [],
+        unmatchedCodes: [],
+        unmappedDepts: [],
+        matchRate: 0,
+      });
+    }
+
     const periodId = new URL(request.url).searchParams.get("period_id");
 
     let periodQuery = supabase
@@ -29,15 +53,19 @@ export async function GET(request: Request) {
         .limit(1);
     }
 
-    const { data: periods } = await periodQuery;
+    const { data: periods, error: periodErr } = await periodQuery;
+    if (periodErr) throw periodErr;
+
     const period = periods?.[0];
     if (!period) {
       return NextResponse.json({
+        dbReady: true,
         period: null,
         stockSnapshot: null,
         rollup: [],
         unmatchedCodes: [],
         unmappedDepts: [],
+        matchRate: 0,
       });
     }
 
@@ -88,6 +116,7 @@ export async function GET(request: Request) {
     ].sort((a, b) => a - b);
 
     return NextResponse.json({
+      dbReady: true,
       period,
       stockSnapshot: stockRes.data,
       rollup,

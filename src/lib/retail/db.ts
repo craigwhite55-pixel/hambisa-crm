@@ -73,7 +73,7 @@ export async function chunkInsert(
   supabase: SupabaseClient,
   table: string,
   rows: Record<string, unknown>[],
-  chunkSize = 400
+  chunkSize = 800
 ): Promise<void> {
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);

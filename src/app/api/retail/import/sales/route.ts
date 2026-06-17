@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 import { NextResponse } from "next/server";
 import { getSessionProfile } from "@/lib/auth/session";
 import { canAccessRetail } from "@/lib/roles";
